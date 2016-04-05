@@ -49,7 +49,7 @@ static NSString * const JvFilterOptionId        = @"JvOptionId";
 @class JvFilterView;
 @protocol JvFilterViewDelegate <NSObject>
 @optional
-- (void)jvFilterView:(JvFilterView *)jvFilterView didSelectOption:(NSDictionary *)option;
+- (void)jvFilterView:(JvFilterView *)jvFilterView didSelectItem:(JvFilterItem *)item option:(NSDictionary *)option;
 - (void)jvFilterView:(JvFilterView *)jvFilterView didSelectOptionName:(NSString *)optionName optionId:(id)optionId;
 @end
 

@@ -314,8 +314,8 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
         selectingItem.selectedOptionIndex = indexPath.row;
     }
     
-    if ([self.delegate respondsToSelector:@selector(jvFilterView:didSelectOption:)]) {
-        [self.delegate jvFilterView:self didSelectOption:selectingCell.option];
+    if ([self.delegate respondsToSelector:@selector(jvFilterView:didSelectItem:option:)]) {
+        [self.delegate jvFilterView:self didSelectItem:selectingItem option:selectingCell.option];
     }
     if ([self.delegate respondsToSelector:@selector(jvFilterView:didSelectOptionName:optionId:)]) {
         [self.delegate jvFilterView:self didSelectOptionName:selectingCell.option[JvFilterOptionName] optionId:selectingCell.option[JvFilterOptionId]];
