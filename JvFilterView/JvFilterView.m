@@ -164,6 +164,7 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
         [btnTitle addTarget:self action:@selector(btnTitlePressed:) forControlEvents:UIControlEventTouchUpInside];
         [self.titlesContainerView addSubview:btnTitle];
     }
+    [self setNeedsLayout];
 }
 
 - (NSString *)arrowTitle:(NSString *)aTitle directionDown:(BOOL)isDown{
