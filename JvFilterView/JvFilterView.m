@@ -114,7 +114,7 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     flowLayout.itemSize = CGSizeMake(JvOptionCellWidth, JvOptionCellHeight);
     flowLayout.minimumInteritemSpacing = JvOptionCellMarginX;
     flowLayout.minimumLineSpacing = JvOptionCellMarginY;
-    flowLayout.sectionInset = UIEdgeInsetsMake(15, 15, 15, 15);
+    flowLayout.sectionInset = UIEdgeInsetsMake(14, 14, 14, 14);
     
     self.optionsContainerView = [[UICollectionView alloc]initWithFrame:CGRectMake(0, 0, self.frame.size.width, 0) collectionViewLayout:flowLayout];
     self.optionsContainerView.backgroundColor = [UIColor whiteColor];
@@ -129,7 +129,7 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     
     self.titlesContainerView = [[UIView alloc]init];
     self.titlesContainerView.tag = -1;
-    self.titlesContainerView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1];
+    self.titlesContainerView.backgroundColor = [UIColor colorWithWhite:1 alpha:1];
     [self addSubview:self.titlesContainerView];
     
 }
@@ -155,6 +155,7 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
 }
 
 - (void)setupTitleContainerView {
+    self.titlesContainerView.backgroundColor = [UIColor colorWithWhite:0.9 alpha:1];
     [self.titlesContainerView.subviews makeObjectsPerformSelector:@selector(removeFromSuperview)];
     
     UIFont *fontBtnTitle = [UIFont systemFontOfSize:14];
@@ -164,6 +165,7 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     for (NSInteger i = 0; i < self.items.count; i ++) {
         JvFilterItem *item = self.items[i];
         UIButton *btnTitle = [UIButton buttonWithType:UIButtonTypeCustom];
+        btnTitle.clipsToBounds = YES;
         btnTitle.backgroundColor = bgColorBtnTitle;
         btnTitle.titleLabel.font = fontBtnTitle;
         btnTitle.tag = i;
@@ -172,6 +174,12 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
         [btnTitle setTitle:[self arrowTitle:item.title directionDown:YES] forState:UIControlStateNormal];
         [btnTitle setTitle:[self arrowTitle:item.title directionDown:NO] forState:UIControlStateSelected];
         [btnTitle addTarget:self action:@selector(btnTitlePressed:) forControlEvents:UIControlEventTouchUpInside];
+        
+        UIImage *arrow_normal = [UIImage imageNamed:@"arrow_down"];
+        UIImage *arrow_selected = [UIImage imageNamed:@"arrow_up"];
+        [btnTitle setImage:arrow_normal forState:UIControlStateNormal];
+        [btnTitle setImage:arrow_selected forState:UIControlStateSelected];
+        
         [self.titlesContainerView addSubview:btnTitle];
     }
     [self setNeedsLayout];
@@ -197,9 +205,9 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
 - (NSString *)arrowTitle:(NSString *)aTitle directionDown:(BOOL)isDown{
     NSString *arrowTitle;
     if (isDown) {
-        arrowTitle = [NSString stringWithFormat:@"%@ ∨", aTitle];
+        arrowTitle = [NSString stringWithFormat:@"%@", aTitle];
     }else{
-        arrowTitle = [NSString stringWithFormat:@"%@ ∧", aTitle];
+        arrowTitle = [NSString stringWithFormat:@"%@", aTitle];
     }
     return arrowTitle;
 }
@@ -271,7 +279,7 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     CGFloat height = sectionInset.top + sectionInset.bottom;
     
     NSUInteger optionsCount = self.items[self.currentItemIndex].options.count;
-    NSUInteger countInALine = (self.frame.size.width - (sectionInset.left + sectionInset.right)) / (flowLayout.itemSize.width + flowLayout.minimumInteritemSpacing);
+    NSUInteger countInALine = (self.frame.size.width - (sectionInset.left + sectionInset.right) + flowLayout.minimumInteritemSpacing) / (flowLayout.itemSize.width + flowLayout.minimumInteritemSpacing);
     if (countInALine <= 0) {
         countInALine = 1;
     }
@@ -309,6 +317,10 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
                                     0,
                                     (btnTitle.tag == itemCount - 1) ? btnTitleSize.width : btnTitleSize.width - 1,
                                     btnTitleSize.height);
+        CGFloat imgWidth = btnTitle.imageView.frame.size.width;
+        CGFloat labWidth = btnTitle.titleLabel.bounds.size.width;
+        [btnTitle setTitleEdgeInsets:UIEdgeInsetsMake(0, - imgWidth, 0, imgWidth)];
+        [btnTitle setImageEdgeInsets:UIEdgeInsetsMake(0, labWidth, 0, - labWidth)];
     }
     
     CGFloat optionsContainerHeight = self.optionsContainerView.frame.size.height;
