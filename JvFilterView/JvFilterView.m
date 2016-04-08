@@ -15,14 +15,21 @@
 + (instancetype)itemWithDict:(NSDictionary *)dict {
     JvFilterItem *item = [[JvFilterItem alloc]init];
     if (item) {
-        item.title = dict[JvFilterTitle];
-        item.options = [NSMutableArray array];
-        if (dict[JvFilterOptions] && [dict[JvFilterOptions] count]) {
-            [item.options addObjectsFromArray:dict[JvFilterOptions]];
-        }
-        item.selectedOptionIndex = -1;
+        [item setupWithDict:dict];
     }
     return item;
+}
+
+- (void)setupWithDict:(NSDictionary *)dict {
+    self.title = dict[JvFilterTitle];
+    self.options = [NSMutableArray array];
+    if (dict[JvFilterOptions] && [dict[JvFilterOptions] count]) {
+        [self.options addObjectsFromArray:dict[JvFilterOptions]];
+    }
+    self.selectedOptionIndex = -1;
+    if ([self.options.lastObject[JvFilterOptionName] isEqualToString:JvFilterOptionAllName]) {
+        self.selectedOptionIndex = self.options.count - 1;
+    }
 }
 
 @end
@@ -130,8 +137,11 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
 - (void)setExtendedFrame:(CGRect)extendedFrame {
     _extendedFrame = extendedFrame;
     
-    extendedFrame.size.height = JvTitlesContainerViewHeight;
-    self.retractedFrame = extendedFrame;
+    CGRect retractedFrame = extendedFrame;
+    if (retractedFrame.size.height > JvTitlesContainerViewHeight) {
+        retractedFrame.size.height = JvTitlesContainerViewHeight;
+    }
+    self.retractedFrame = retractedFrame;
 }
 
 - (void)setRetractedFrame:(CGRect)retractedFrame {
@@ -167,6 +177,23 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     [self setNeedsLayout];
 }
 
+- (void)resetTitleButtonOfItem:(JvFilterItem *)item {
+    if (!item) {
+        for (UIButton *btnTitle in self.titlesContainerView.subviews) {
+            if ([btnTitle isKindOfClass:[UIButton class]]) {
+                [btnTitle setTitle:[self arrowTitle:self.items[btnTitle.tag].title directionDown:YES] forState:UIControlStateNormal];
+            }
+        }
+    }else{
+        NSInteger index = [self.items indexOfObject:item];
+        if (index != NSNotFound) {
+            UIButton *btnTitle = (UIButton *)[self.titlesContainerView viewWithTag:index];
+            [btnTitle setTitle:[self arrowTitle:item.title directionDown:YES] forState:UIControlStateNormal];
+        }
+    }
+    
+}
+
 - (NSString *)arrowTitle:(NSString *)aTitle directionDown:(BOOL)isDown{
     NSString *arrowTitle;
     if (isDown) {
@@ -182,6 +209,12 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
         sender.selected = NO;
         [self popOutOptionsView];
     }else{
+        if ([self.delegate respondsToSelector:@selector(jvFilterView:shouldExtendItem:)]) {
+            if (![self.delegate jvFilterView:self shouldExtendItem:self.items[sender.tag]]) {
+                return;
+            }
+        }
+        
         static UIButton *selectedBtnTitle = nil;
         if (selectedBtnTitle) {
             selectedBtnTitle.selected = NO;
@@ -323,7 +356,14 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     }
     
     UIButton *curBtnTitle = (UIButton *)[self.titlesContainerView viewWithTag:self.currentItemIndex];
-    [curBtnTitle setTitle:[self arrowTitle:selectingCell.option[JvFilterOptionName] directionDown:YES] forState:UIControlStateNormal];
+    NSString *newTitle;
+    if ([selectingCell.option[JvFilterOptionName] isEqualToString:JvFilterOptionAllName]) {
+        //selected 'All'
+        newTitle = [self arrowTitle:selectingItem.title directionDown:YES];
+    }else{
+        newTitle = [self arrowTitle:selectingCell.option[JvFilterOptionName] directionDown:YES];
+    }
+    [curBtnTitle setTitle:newTitle forState:UIControlStateNormal];
     [self btnTitlePressed:curBtnTitle];
 }
 

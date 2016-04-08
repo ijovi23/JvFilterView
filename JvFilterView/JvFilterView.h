@@ -25,6 +25,8 @@ static NSString * const JvFilterOptions         = @"JvOptions";
 static NSString * const JvFilterOptionName      = @"JvOptionName";
 static NSString * const JvFilterOptionId        = @"JvOptionId";
 
+static NSString * JvFilterOptionAllName         = @"全部";
+static NSString * JvFilterOptionAllId           = @"-1";
 
 @interface JvFilterItem : NSObject
 @property (copy, nonatomic) NSString *title;
@@ -38,6 +40,7 @@ static NSString * const JvFilterOptionId        = @"JvOptionId";
         ]}
  */
 + (instancetype)itemWithDict:(NSDictionary *)dict;
+- (void)setupWithDict:(NSDictionary *)dict;
 @end
 
 
@@ -51,6 +54,7 @@ static NSString * const JvFilterOptionId        = @"JvOptionId";
 @optional
 - (void)jvFilterView:(JvFilterView *)jvFilterView didSelectItem:(JvFilterItem *)item option:(NSDictionary *)option;
 - (void)jvFilterView:(JvFilterView *)jvFilterView didSelectOptionName:(NSString *)optionName optionId:(id)optionId;
+- (BOOL)jvFilterView:(JvFilterView *)jvFilterView shouldExtendItem:(JvFilterItem *)item;
 @end
 
 
@@ -65,6 +69,8 @@ static NSString * const JvFilterOptionId        = @"JvOptionId";
 
 @property (strong, nonatomic) NSArray<JvFilterItem *> *items;
 @property (assign, nonatomic) NSInteger currentItemIndex;
+
+- (void)resetTitleButtonOfItem:(JvFilterItem *)item;
 
 @property (weak, nonatomic) id <JvFilterViewDelegate> delegate;
 
