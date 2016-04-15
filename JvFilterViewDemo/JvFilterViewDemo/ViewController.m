@@ -28,7 +28,7 @@
     [self.view addSubview:button];
     
     
-    JvFilterView *filterView = [[JvFilterView alloc]init];
+    JvFilterView *filterView = [[JvFilterView alloc]initWithStyle:YES];
     filterView.extendedFrame = CGRectMake(0, 64, self.view.frame.size.width, self.view.frame.size.height - 100);
     
     NSArray *items = @[[JvFilterItem itemWithDict:@{JvFilterTitle:@"Category",

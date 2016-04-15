@@ -81,11 +81,48 @@
 
 @end
 
+#pragma mark - JvFilterOptionTableCell
+
+@implementation JvFilterOptionTableCell
+
+- (instancetype)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier {
+    self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
+    if (self) {
+        [self initUI];
+    }
+    return self;
+}
+
+- (void)initUI {
+    self.backgroundColor = [UIColor whiteColor];
+    
+    self.labName = [[UILabel alloc]init];
+    self.labName.font = [UIFont systemFontOfSize:13];
+    self.labName.textColor = [UIColor colorWithWhite:0.2 alpha:1];
+    self.labName.textAlignment = NSTextAlignmentLeft;
+    [self.contentView addSubview:self.labName];
+}
+
+- (void)layoutSubviews {
+    [super layoutSubviews];
+    
+    self.labName.frame = CGRectMake(12, 0, self.contentView.bounds.size.width - 24, self.contentView.bounds.size.height);
+}
+
+- (void)setOption:(NSDictionary *)option {
+    _option = option;
+    if (_option) {
+        self.labName.text = _option[JvFilterOptionName];
+    }
+}
+
+@end
+
 #pragma mark - JvFilterView
 
 static NSString * const JvOptionCellId = @"JvOptionCell";
 
-@interface JvFilterView () <UICollectionViewDataSource, UICollectionViewDelegate>
+@interface JvFilterView () <UICollectionViewDataSource, UICollectionViewDelegate, UITableViewDataSource, UITableViewDelegate>
 
 @end
 
@@ -99,8 +136,21 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     return self;
 }
 
+- (instancetype)initWithStyle:(BOOL)isTableStyle {
+    self = [super init];
+    if (self) {
+        self.isTableViewStyle = isTableStyle;
+        [self initUI];
+    }
+    return self;
+}
+
 - (void)initUI {
     self.clipsToBounds = YES;
+    
+    if (self.titlesContainerViewHeight <= 0.001) {
+        self.titlesContainerViewHeight = JvTitlesContainerViewHeight;
+    }
     
     self.maskView = [[UIView alloc]init];
     self.maskView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
@@ -108,21 +158,37 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     [self.maskView addGestureRecognizer:[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(maskViewTapped:)]];
     [self addSubview:self.maskView];
     
-    //optionsContainerView
-    
-    UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc]init];
-    flowLayout.itemSize = CGSizeMake(JvOptionCellWidth, JvOptionCellHeight);
-    flowLayout.minimumInteritemSpacing = JvOptionCellMarginX;
-    flowLayout.minimumLineSpacing = JvOptionCellMarginY;
-    flowLayout.sectionInset = UIEdgeInsetsMake(14, 14, 14, 14);
-    
-    self.optionsContainerView = [[UICollectionView alloc]initWithFrame:CGRectMake(0, 0, self.frame.size.width, 0) collectionViewLayout:flowLayout];
-    self.optionsContainerView.backgroundColor = [UIColor whiteColor];
-    self.optionsContainerView.hidden = YES;
-    self.optionsContainerView.dataSource = self;
-    self.optionsContainerView.delegate = self;
-    [self.optionsContainerView registerClass:[JvFilterOptionCell class] forCellWithReuseIdentifier:JvOptionCellId];
-    [self addSubview:self.optionsContainerView];
+    if (self.isTableViewStyle) {
+        
+        //optionsListView
+        
+        self.optionsListView = [[UITableView alloc]initWithFrame:CGRectMake(0, 0, self.frame.size.width, 0)];
+        self.optionsListView.backgroundColor = [UIColor whiteColor];
+        self.optionsListView.tableFooterView = [[UIView alloc]init];
+        self.optionsListView.hidden = YES;
+        self.optionsListView.dataSource = self;
+        self.optionsListView.delegate = self;
+        [self.optionsListView registerClass:[JvFilterOptionTableCell class] forCellReuseIdentifier:JvOptionCellId];
+        [self addSubview:self.optionsListView];
+        
+    }else{
+        
+        //optionsContainerView
+        
+        UICollectionViewFlowLayout *flowLayout = [[UICollectionViewFlowLayout alloc]init];
+        flowLayout.itemSize = CGSizeMake(JvOptionCellWidth, JvOptionCellHeight);
+        flowLayout.minimumInteritemSpacing = JvOptionCellMarginX;
+        flowLayout.minimumLineSpacing = JvOptionCellMarginY;
+        flowLayout.sectionInset = UIEdgeInsetsMake(14, 14, 14, 14);
+        
+        self.optionsContainerView = [[UICollectionView alloc]initWithFrame:CGRectMake(0, 0, self.frame.size.width, 0) collectionViewLayout:flowLayout];
+        self.optionsContainerView.backgroundColor = [UIColor whiteColor];
+        self.optionsContainerView.hidden = YES;
+        self.optionsContainerView.dataSource = self;
+        self.optionsContainerView.delegate = self;
+        [self.optionsContainerView registerClass:[JvFilterOptionCell class] forCellWithReuseIdentifier:JvOptionCellId];
+        [self addSubview:self.optionsContainerView];
+    }
     
     
     //titlesContainerView
@@ -138,8 +204,8 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     _extendedFrame = extendedFrame;
     
     CGRect retractedFrame = extendedFrame;
-    if (retractedFrame.size.height > JvTitlesContainerViewHeight) {
-        retractedFrame.size.height = JvTitlesContainerViewHeight;
+    if (retractedFrame.size.height > self.titlesContainerViewHeight) {
+        retractedFrame.size.height = self.titlesContainerViewHeight;
     }
     self.retractedFrame = retractedFrame;
 }
@@ -175,8 +241,8 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
         [btnTitle setTitle:[self arrowTitle:item.title directionDown:NO] forState:UIControlStateSelected];
         [btnTitle addTarget:self action:@selector(btnTitlePressed:) forControlEvents:UIControlEventTouchUpInside];
         
-        UIImage *arrow_normal = [UIImage imageNamed:@"arrow_down"];
-        UIImage *arrow_selected = [UIImage imageNamed:@"arrow_up"];
+        UIImage *arrow_normal = [UIImage imageNamed:@"jv_arrow_down"];
+        UIImage *arrow_selected = [UIImage imageNamed:@"jv_arrow_up"];
         [btnTitle setImage:arrow_normal forState:UIControlStateNormal];
         [btnTitle setImage:arrow_selected forState:UIControlStateSelected];
         
@@ -247,45 +313,80 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
 - (void)popInOptionsView {
     self.frame = self.extendedFrame;
     
-    [self.optionsContainerView reloadData];
-    self.optionsContainerView.hidden = NO;
-    self.optionsContainerView.alpha = 0;
-    self.optionsContainerView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, 0);
-    self.maskView.hidden = NO;
-    [UIView animateWithDuration:0.2 animations:^{
-        self.optionsContainerView.alpha = 1;
-        self.optionsContainerView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, [self calcOptionsViewHeight]);
-        self.maskView.alpha = 1;
-    }];
+    if (self.optionsListView) {
+        
+        [self.optionsListView reloadData];
+        self.optionsListView.hidden = NO;
+        self.optionsListView.alpha = 0;
+        self.optionsListView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, 0);
+        [UIView animateWithDuration:0.2 animations:^{
+            self.optionsListView.alpha = 1;
+            self.optionsListView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, [self calcOptionsViewHeight]);
+        }];
+        
+    }else if (self.optionsContainerView) {
+        
+        [self.optionsContainerView reloadData];
+        self.optionsContainerView.hidden = NO;
+        self.optionsContainerView.alpha = 0;
+        self.optionsContainerView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, 0);
+        self.maskView.hidden = NO;
+        [UIView animateWithDuration:0.2 animations:^{
+            self.optionsContainerView.alpha = 1;
+            self.optionsContainerView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, [self calcOptionsViewHeight]);
+            self.maskView.alpha = 1;
+        }];
+    }
 }
 
 - (void)popOutOptionsView {
-    [UIView animateWithDuration:0.2 animations:^{
-        self.optionsContainerView.alpha = 0;
-        self.optionsContainerView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, [self calcOptionsViewHeight] / 2);
-        self.maskView.alpha = 0;
-    } completion:^(BOOL finished) {
-        self.optionsContainerView.hidden = YES;
-        self.maskView.hidden = YES;
+    if (self.optionsListView) {
+        [UIView animateWithDuration:0.2 animations:^{
+            self.optionsListView.alpha = 0;
+            self.optionsListView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, [self calcOptionsViewHeight] / 2);
+        } completion:^(BOOL finished) {
+            self.optionsListView.hidden = YES;
+            self.frame = self.retractedFrame;
+        }];
         
-        self.frame = self.retractedFrame;
-    }];
+    }else if (self.optionsContainerView) {
+        [UIView animateWithDuration:0.2 animations:^{
+            self.optionsContainerView.alpha = 0;
+            self.optionsContainerView.frame = CGRectMake(0, CGRectGetMaxY(self.titlesContainerView.frame), self.frame.size.width, [self calcOptionsViewHeight] / 2);
+            self.maskView.alpha = 0;
+        } completion:^(BOOL finished) {
+            self.optionsContainerView.hidden = YES;
+            self.maskView.hidden = YES;
+            
+            self.frame = self.retractedFrame;
+        }];
+    }
 }
 
 - (CGFloat)calcOptionsViewHeight {
-    UICollectionViewFlowLayout *flowLayout = (UICollectionViewFlowLayout *)self.optionsContainerView.collectionViewLayout;
-    UIEdgeInsets sectionInset = flowLayout.sectionInset;
+    CGFloat height;
     
-    CGFloat height = sectionInset.top + sectionInset.bottom;
-    
-    NSUInteger optionsCount = self.items[self.currentItemIndex].options.count;
-    NSUInteger countInALine = (self.frame.size.width - (sectionInset.left + sectionInset.right) + flowLayout.minimumInteritemSpacing) / (flowLayout.itemSize.width + flowLayout.minimumInteritemSpacing);
-    if (countInALine <= 0) {
-        countInALine = 1;
+    if (self.optionsListView) {
+        NSUInteger optionsCount = self.items[self.currentItemIndex].options.count;
+        CGFloat cellHeight = JvOptionCellHeight;
+        height = cellHeight * optionsCount;
+        
+    }else if (self.optionsContainerView) {
+        UICollectionViewFlowLayout *flowLayout = (UICollectionViewFlowLayout *)self.optionsContainerView.collectionViewLayout;
+        UIEdgeInsets sectionInset = flowLayout.sectionInset;
+        
+        height = sectionInset.top + sectionInset.bottom;
+        
+        NSUInteger optionsCount = self.items[self.currentItemIndex].options.count;
+        NSUInteger countInALine = (self.frame.size.width - (sectionInset.left + sectionInset.right) + flowLayout.minimumInteritemSpacing) / (flowLayout.itemSize.width + flowLayout.minimumInteritemSpacing);
+        if (countInALine <= 0) {
+            countInALine = 1;
+        }
+        NSUInteger countOfLines = (optionsCount - 1) / countInALine + 1;
+        
+        height += (flowLayout.itemSize.height + flowLayout.minimumLineSpacing) * countOfLines;
+        
     }
-    NSUInteger countOfLines = (optionsCount - 1) / countInALine + 1;
-    
-    height += (flowLayout.itemSize.height + flowLayout.minimumLineSpacing) * countOfLines;
     
     CGFloat maxHeight = self.frame.size.height - self.titlesContainerView.frame.size.height;
     if (height > maxHeight) {
@@ -305,7 +406,7 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
     
     self.maskView.frame = self.bounds;
     
-    self.titlesContainerView.frame = CGRectMake(0, 0, self_size.width, JvTitlesContainerViewHeight);
+    self.titlesContainerView.frame = CGRectMake(0, 0, self_size.width, self.titlesContainerViewHeight);
     
     NSUInteger itemCount = self.items.count;
     CGSize btnTitleSize = CGSizeMake(self_size.width / itemCount, self.titlesContainerView.frame.size.height - 1);
@@ -355,6 +456,59 @@ static NSString * const JvOptionCellId = @"JvOptionCell";
         if (s_selectedIndexPath) {
             [collectionView deselectItemAtIndexPath:s_selectedIndexPath animated:NO];
         }
+        s_selectedCell = selectingCell;
+        s_selectedIndexPath = indexPath;
+        selectingItem.selectedOptionIndex = indexPath.row;
+    }
+    
+    if ([self.delegate respondsToSelector:@selector(jvFilterView:didSelectItem:option:)]) {
+        [self.delegate jvFilterView:self didSelectItem:selectingItem option:selectingCell.option];
+    }
+    if ([self.delegate respondsToSelector:@selector(jvFilterView:didSelectOptionName:optionId:)]) {
+        [self.delegate jvFilterView:self didSelectOptionName:selectingCell.option[JvFilterOptionName] optionId:selectingCell.option[JvFilterOptionId]];
+    }
+    
+    UIButton *curBtnTitle = (UIButton *)[self.titlesContainerView viewWithTag:self.currentItemIndex];
+    NSString *newTitle;
+    if ([selectingCell.option[JvFilterOptionName] isEqualToString:JvFilterOptionAllName]) {
+        //selected 'All'
+        newTitle = [self arrowTitle:selectingItem.title directionDown:YES];
+    }else{
+        newTitle = [self arrowTitle:selectingCell.option[JvFilterOptionName] directionDown:YES];
+    }
+    [curBtnTitle setTitle:newTitle forState:UIControlStateNormal];
+    [self btnTitlePressed:curBtnTitle];
+}
+
+#pragma mark TableView DataSource & Delegate
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return self.items[self.currentItemIndex].options.count;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    return JvOptionCellHeight;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    JvFilterOptionTableCell *cell = [tableView dequeueReusableCellWithIdentifier:JvOptionCellId forIndexPath:indexPath];
+    [cell setOption:self.items[self.currentItemIndex].options[indexPath.row]];
+    return cell;
+}
+
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+    static JvFilterOptionTableCell *s_selectedCell = nil;
+    static NSIndexPath *s_selectedIndexPath = nil;
+    
+    JvFilterOptionTableCell *selectingCell = (JvFilterOptionTableCell *)[tableView cellForRowAtIndexPath:indexPath];
+    JvFilterItem *selectingItem = self.items[self.currentItemIndex];
+    if (!(s_selectedIndexPath && [indexPath compare:s_selectedIndexPath] == NSOrderedSame)) {
         s_selectedCell = selectingCell;
         s_selectedIndexPath = indexPath;
         selectingItem.selectedOptionIndex = indexPath.row;

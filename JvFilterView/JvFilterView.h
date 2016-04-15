@@ -49,6 +49,12 @@ static NSString * JvFilterOptionAllId           = @"-1";
 @property (strong, nonatomic) UILabel *labName;
 @end
 
+@interface JvFilterOptionTableCell : UITableViewCell
+@property (weak, nonatomic) NSDictionary *option;
+@property (strong, nonatomic) UILabel *labName;
+@end
+
+
 @class JvFilterView;
 @protocol JvFilterViewDelegate <NSObject>
 @optional
@@ -60,10 +66,16 @@ static NSString * JvFilterOptionAllId           = @"-1";
 
 @interface JvFilterView : UIView
 
+- (instancetype)initWithStyle:(BOOL)isTableStyle;
+
+@property (assign, nonatomic) BOOL isTableViewStyle;
+
 @property (strong, nonatomic) UIView *titlesContainerView;
 @property (strong, nonatomic) UICollectionView *optionsContainerView;
+@property (strong, nonatomic) UITableView *optionsListView;
 @property (strong, nonatomic) UIView *maskView;
 
+@property (assign, nonatomic) CGFloat titlesContainerViewHeight;
 @property (assign, nonatomic) CGRect extendedFrame;
 @property (assign, nonatomic) CGRect retractedFrame;
 
